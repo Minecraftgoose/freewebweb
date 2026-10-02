@@ -1,0 +1,303 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Freewebweb - 免费静态网页托管</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#0d1117;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#c9d1d9;padding:2rem 1rem;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+        .container{max-width:720px;width:100%;margin:0 auto;}
+        .card{background:#161b22;border:1px solid #30363d;border-radius:16px;padding:2rem;margin-bottom:1.5rem;transition:border-color 0.2s;}
+        .card:hover{border-color:#58a6ff33;}
+        .logo{font-size:2.4rem;font-weight:700;background:linear-gradient(135deg,#58a6ff,#3fb950);-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;margin-bottom:0.3rem;letter-spacing:-0.5px;}
+        .sub{text-align:center;color:#8b949e;font-size:0.9rem;margin-bottom:1.8rem;}
+        .sub i{margin-right:6px;color:#58a6ff;}
+        .form-group{margin-bottom:1.2rem;}
+        label{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:500;color:#e6edf3;font-size:0.9rem;}
+        label i{color:#58a6ff;width:20px;font-size:1rem;}
+        input,textarea{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 12px;font-size:14px;color:#c9d1d9;font-family:'SF Mono',Consolas,monospace;transition:border-color 0.2s,box-shadow 0.2s;}
+        input:focus,textarea:focus{outline:none;border-color:#58a6ff;box-shadow:0 0 0 3px rgba(88,166,255,0.15);}
+        input::placeholder,textarea::placeholder{color:#484f58;}
+        textarea{min-height:180px;resize:vertical;line-height:1.5;}
+        .hint{font-size:12px;color:#8b949e;margin-top:5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+        .hint i{font-size:12px;}
+        .hint .badge{display:inline-block;padding:0 8px;border-radius:4px;font-size:11px;background:#21262d;color:#8b949e;margin-left:4px;}
+        .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:#238636;border:none;border-radius:8px;color:white;font-weight:600;font-size:1rem;cursor:pointer;transition:all 0.25s;position:relative;}
+        .btn:hover:not(:disabled){background:#2ea043;transform:translateY(-1px);box-shadow:0 4px 12px rgba(35,134,54,0.3);}
+        .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+        .btn .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+        .result{margin-top:1.2rem;padding:1rem;border-radius:12px;border:1px solid #30363d;word-break:break-word;display:none;}
+        .result.show{display:block;}
+        .result.success{border-color:#3fb950;background:#0d1f0d;}
+        .result.error{border-color:#da3633;background:#1f0d0d;}
+        .result.info{border-color:#58a6ff;background:#0d1a2d;}
+        .result .title{font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+        .result .title i{font-size:1.1rem;}
+        .result .title .badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:0.75rem;background:#1b3d1b;color:#3fb950;margin-left:4px;}
+        .result .link-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.9rem;flex-wrap:wrap;}
+        .result .link-row i{color:#58a6ff;width:18px;}
+        .result .link-row a{color:#58a6ff;text-decoration:none;border-bottom:1px dashed #58a6ff33;}
+        .result .link-row a:hover{border-bottom-color:#58a6ff;}
+        .result .error-detail{background:#0d1117;border:1px solid #da3633;border-radius:8px;padding:0.8rem 1rem;margin-top:8px;color:#f85149;font-size:0.9rem;line-height:1.6;}
+        .result .error-detail i{margin-right:6px;}
+        .result .warning{color:#d2991d;font-size:0.85rem;margin-top:8px;padding:8px 12px;background:#1f1a0d;border-radius:6px;border:1px solid #d2991d33;}
+        .result .warning i{margin-right:6px;}
+        .drag-over{background:#0d1a2d;border-color:#58a6ff;border-style:dashed;}
+        .footer{text-align:center;font-size:12px;color:#484f58;margin-top:1.5rem;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;}
+        .footer a{color:#484f58;text-decoration:none;}
+        .footer a:hover{color:#8b949e;}
+        .footer i{margin-right:4px;}
+        .char-count{text-align:right;font-size:11px;color:#484f58;padding-top:4px;}
+        .char-count.warning{color:#d2991d;}
+        .char-count.danger{color:#da3633;}
+        @media (max-width:480px){.card{padding:1.2rem;}.logo{font-size:1.8rem;}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="logo">Freewebweb</div>
+    <div class="sub"><i class="fas fa-globe"></i> 免费静态网页托管 · 即传即用</div>
+
+    <div class="card" id="dropZone">
+        <div class="form-group">
+            <label><i class="fas fa-link"></i> 子域名 (Slug)</label>
+            <input type="text" id="slug" placeholder="例如: my-page" autocomplete="off" spellcheck="false">
+            <div class="hint">
+                <i class="fas fa-info-circle"></i>
+                3-64 位，小写字母/数字/连字符，不能以连字符开头或结尾
+                <span class="badge">可用: a-z 0-9 -</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-code"></i> HTML 内容 <span style="color:#8b949e;font-weight:400;font-size:0.8rem;">(支持拖拽 .html 文件)</span></label>
+            <textarea id="htmlCode" rows="10" placeholder="粘贴完整的 HTML 代码...&#10;也可以拖拽 HTML 文件到此处"></textarea>
+            <div class="char-count" id="charCount">0 字符</div>
+            <div class="hint">
+                <i class="fas fa-shield-alt"></i>
+                自动检测 HTML 有效性 · 支持完整网页
+                <span class="badge">最大 300KB</span>
+            </div>
+        </div>
+
+        <button id="uploadBtn" class="btn"><i class="fas fa-rocket"></i> 发布网站</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <div class="footer">
+        <span><i class="fas fa-shield-alt"></i> 无需注册</span>
+        <span><i class="fas fa-bolt"></i> 即时发布</span>
+        <a href="/admin.html"><i class="fas fa-edit"></i> 管理站点</a>
+    </div>
+</div>
+
+<script>
+    (function() {
+        var uploadBtn = document.getElementById('uploadBtn');
+        var slugInput = document.getElementById('slug');
+        var htmlInput = document.getElementById('htmlCode');
+        var resultDiv = document.getElementById('result');
+        var charCount = document.getElementById('charCount');
+        var dropZone = document.getElementById('dropZone');
+
+        var MAX_SIZE = 300 * 1024; // 300KB
+
+        // ===== 字符计数 =====
+        htmlInput.addEventListener('input', function() {
+            var len = this.value.length;
+            var bytes = new Blob([this.value]).size;
+            charCount.textContent = bytes + ' bytes (' + len + ' 字符)';
+            charCount.className = 'char-count';
+            if (bytes > MAX_SIZE) {
+                charCount.classList.add('danger');
+            } else if (bytes > MAX_SIZE * 0.8) {
+                charCount.classList.add('warning');
+            }
+        });
+
+        // ===== 拖拽上传 =====
+        var dragCounter = 0;
+
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dragCounter++;
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                dropZone.classList.remove('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dragCounter = 0;
+            dropZone.classList.remove('drag-over');
+
+            var files = e.dataTransfer.files;
+            if (files.length > 0) {
+                var file = files[0];
+                if (file.name.endsWith('.html') || file.type === 'text/html') {
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        htmlInput.value = ev.target.result;
+                        htmlInput.dispatchEvent(new Event('input'));
+                        showResult('info', '文件已加载', '已加载 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)');
+                    };
+                    reader.onerror = function() {
+                        showResult('error', '读取失败', '无法读取文件，请手动粘贴');
+                    };
+                    reader.readAsText(file);
+                } else {
+                    showResult('error', '不支持的文件类型', '请拖拽 .html 文件');
+                }
+            }
+        });
+
+        // ===== Slug 自动格式化 =====
+        slugInput.addEventListener('input', function() {
+            this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        });
+
+        // ===== 显示结果 =====
+        function showResult(type, title, content, extra) {
+            resultDiv.className = 'result show ' + type;
+            var iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                info: 'fa-info-circle'
+            };
+            var html = '<div class="title"><i class="fas ' + (iconMap[type] || 'fa-info-circle') + '"></i> ' + title + '</div>';
+            if (content) html += '<div>' + content + '</div>';
+            if (extra) html += extra;
+            resultDiv.innerHTML = html;
+        }
+
+        // ===== 格式化错误信息 =====
+        function formatError(data) {
+            if (data.detection) {
+                var tips = {
+                    'plain_text': '看起来你上传的是纯文本内容。请用 HTML 标签包裹你的内容，例如: <code>&lt;p&gt;你的文字&lt;/p&gt;</code>',
+                    'no_html_tags': '没有检测到任何 HTML 标签。请确保你粘贴的是完整的网页代码。',
+                    'json_data': '检测到 JSON 数据。请上传 HTML 网页文件，而不是 JSON。',
+                    'long_plain_text': '检测到大量纯文本。请用 HTML 标签（如 <code>&lt;div&gt;</code>、<code>&lt;p&gt;</code>）包裹内容。',
+                    'too_short': '内容太短了，请上传完整的 HTML 网页。',
+                    'too_large': '文件超过 300KB 限制，请压缩后重试。'
+                };
+                var tip = tips[data.detection] || '请确保上传的是有效的 HTML 网页文件。';
+                return '<div class="error-detail"><i class="fas fa-lightbulb"></i> ' + tip + '</div>' +
+                        '<div style="margin-top:8px;font-size:0.85rem;color:#8b949e;">检测类型: <code>' + data.detection + '</code></div>';
+            }
+            return '<div class="error-detail"><i class="fas fa-exclamation-triangle"></i> ' + (data.error || '未知错误') + '</div>';
+        }
+
+        // ===== 主发布逻辑 =====
+        uploadBtn.onclick = function() {
+            var slug = slugInput.value.trim().toLowerCase();
+            var html = htmlInput.value;
+            var bytes = new Blob([html]).size;
+
+            // 基本校验
+            if (!slug) {
+                showResult('error', '请输入子域名', '子域名不能为空');
+                slugInput.focus();
+                return;
+            }
+            if (!html || html.trim().length < 10) {
+                showResult('error', '内容太短', '请粘贴至少 10 个字符的 HTML 内容');
+                htmlInput.focus();
+                return;
+            }
+
+            // 大小限制 300KB
+            if (bytes > MAX_SIZE) {
+                showResult('error', '文件过大', 'HTML 内容超过 300KB 限制 (当前 ' + (bytes / 1024).toFixed(1) + ' KB)，请压缩后重试');
+                htmlInput.focus();
+                return;
+            }
+
+            // Slug 格式校验
+            if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length < 3 || slug.length > 64) {
+                showResult('error', '子域名格式无效', 
+                    '只允许小写字母、数字和连字符，长度 3-64 位，不能以连字符开头或结尾。<br><br>例如: <code>my-page</code>、<code>blog123</code>');
+                slugInput.focus();
+                return;
+            }
+
+            // 禁用按钮
+            var originalText = uploadBtn.innerHTML;
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="spinner"></span> 发布中...';
+            showResult('info', '提交中', '正在检测内容并发布...');
+
+            fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug: slug, html: html })
+            })
+            .then(function(res) {
+                return res.json().then(function(data) {
+                    return { status: res.status, data: data };
+                });
+            })
+            .then(function(result) {
+                var res = result;
+                var data = result.data;
+
+                if (res.status >= 200 && res.status < 300 && data.success) {
+                    var adminUrl = '/admin.html?token=' + data.adminToken;
+                    var detectBadge = data.detection ? '<span class="badge">' + data.detection + '</span>' : '';
+
+                    showResult('success', (data.message || '发布成功'),
+                        '<div class="link-row"><i class="fas fa-globe"></i> 站点地址: <a href="' + data.siteUrl + '" target="_blank">' + data.siteUrl + '</a></div>' +
+                        '<div class="link-row"><i class="fas fa-edit"></i> 管理地址: <a href="' + adminUrl + '" target="_blank">' + adminUrl + '</a></div>' +
+                        '<div class="warning"><i class="fas fa-save"></i> 请保存管理链接！遗失无法找回</div>'
+                    );
+                    slugInput.value = '';
+                    htmlInput.value = '';
+                    htmlInput.dispatchEvent(new Event('input'));
+                } else if (res.status === 422) {
+                    showResult('error', '内容检测未通过', formatError(data));
+                } else if (res.status === 409) {
+                    showResult('error', '子域名已被占用', 
+                        '"<strong>' + slug + '</strong>" 已经被使用，请换一个试试');
+                } else {
+                    showResult('error', '发布失败', 
+                        data.error || data.message || 'HTTP ' + res.status + ': ' + (res.statusText || '未知错误'));
+                }
+            })
+            .catch(function(err) {
+                showResult('error', '网络错误', 
+                    '无法连接到服务器，请检查网络后重试。<br><br><span style="color:#8b949e;font-size:0.85rem;">' + err.message + '</span>');
+            })
+            .finally(function() {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = originalText;
+            });
+        };
+
+        // ===== Ctrl+Enter 快捷键 =====
+        htmlInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                uploadBtn.click();
+            }
+        });
+        slugInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                htmlInput.focus();
+            }
+        });
+
+        // ===== 初始提示 =====
+        showResult('info', '快速上手', 
+            '填写子域名，粘贴 HTML 代码，点击发布即可。<br>支持拖拽 <code>.html</code> 文件到编辑框。');
+    })();
+</script>
+</body>
+</html>

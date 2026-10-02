@@ -1,0 +1,574 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理员控制台</title>
+<style>
+/* === 样式保持不变，仅添加分页样式 === */
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --accent: #58a6ff;
+  --danger: #da3633;
+  --success: #3fb950;
+  --warn: #d2991d;
+}
+body { background: var(--bg); font-family: system-ui, -apple-system, sans-serif; padding: 1rem; color: var(--text); margin: 0; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+h2 { margin: 0 0 1rem; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem; }
+h3 { margin: 0 0 0.5rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: left; }
+th { background: #0d1117; position: sticky; top: 0; z-index: 1; font-size: 0.8rem; text-transform: uppercase; color: #8b949e; }
+tr:hover { background: rgba(88,166,255,0.05); }
+button, .btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; font-size: 0.85rem; background: #21262d; color: var(--text); transition: 0.15s; }
+button:hover { filter: brightness(1.2); }
+.btn-sm { padding: 3px 8px; font-size: 0.78rem; }
+.btn-edit { background: var(--success); color: #fff; border-color: var(--success); }
+.btn-del { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); font-weight: bold; }
+.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-page { background: transparent; border: 1px solid var(--border); min-width: 36px; padding: 4px 10px; }
+.btn-page.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+input, textarea { padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; background: #0d1117; color: var(--text); font-family: inherit; }
+textarea { resize: vertical; }
+.login-box { max-width: 400px; margin: 100px auto; }
+.toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+.toolbar input { flex: 1; min-width: 160px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.stat-card { background: #161b22; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; }
+.stat-num { font-size: 2rem; font-weight: bold; color: var(--accent); }
+.stat-label { font-size: 0.8rem; color: #8b949e; margin-top: 0.25rem; }
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.tab { padding: 8px 20px; border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: none; background: transparent; color: #8b949e; cursor: pointer; }
+.tab.active { background: var(--card); color: var(--accent); border-color: var(--accent) var(--border) transparent; }
+.table-wrap { max-height: 55vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+.modal-bg { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
+.modal-box { background: var(--card); border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 750px; max-height: 80vh; overflow-y: auto; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; }
+.badge-ok { background: #1b3d1b; color: var(--success); }
+.badge-warn { background: #3d351b; color: var(--warn); }
+.badge-ip { background: #1b2d3d; color: var(--accent); font-family: monospace; }
+.link { color: var(--accent); text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: #fff; z-index: 2000; animation: slideIn 0.3s ease; font-size: 0.9rem; }
+.toast-success { background: var(--success); }
+.toast-error { background: var(--danger); }
+@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-btn-row { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; }
+.pagination { display: flex; gap: 4px; justify-content: center; padding: 12px 0; flex-wrap: wrap; border-top: 1px solid var(--border); }
+.pagination .info { color: #8b949e; font-size: 0.85rem; margin-right: 12px; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div id="loginBox" class="login-box card">
+  <h2>管理员登录</h2>
+  <input type="password" id="adminPass" placeholder="输入管理员密码" onkeydown="if(event.key==='Enter')login()">
+  <button id="loginBtn" class="btn-accent" style="width:100%;margin-top:0.5rem" onclick="login()">登 录</button>
+</div>
+
+<!-- 主面板 -->
+<div id="panel" style="display:none">
+
+  <!-- 统计卡片 -->
+  <div id="statsCards" class="stats-grid" style="display:none"></div>
+
+  <!-- 顶部工具栏 -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <h2 style="margin:0">所有站点管理</h2>
+      <div class="toolbar" style="margin:0">
+        <input type="text" id="searchInput" placeholder="搜索 slug..." oninput="onSearchInput()">
+        <button onclick="loadPage(1)" title="刷新">刷新</button>
+        <button onclick="exportJSON()">导出 JSON</button>
+        <button id="deleteAllBtn" class="btn-danger" onclick="deleteAllSites()">一键删除全部</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 切换 -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('sites')">站点列表</button>
+    <button class="tab" onclick="switchTab('ip')">按 IP 分组</button>
+  </div>
+
+  <!-- 站点列表 -->
+  <div id="tabSites">
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Slug</th><th>来源 IP</th><th>类型</th><th>创建时间</th><th>更新时间</th><th>访问</th><th>Token</th><th>操作</th>
+          </tr></thead>
+          <tbody id="sitesTbody"></tbody>
+        </table>
+      </div>
+      <div id="noResults" style="display:none;text-align:center;padding:2rem;color:#8b949e">没有找到站点喵~</div>
+      <!-- 分页控件 -->
+      <div id="pagination" class="pagination"></div>
+    </div>
+  </div>
+
+  <!-- IP 分组 -->
+  <div id="tabIP" style="display:none">
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>IP 地址</th><th>站点数</th><th>站点列表</th><th>最后活跃</th></tr></thead>
+          <tbody id="ipTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑弹窗 -->
+<div id="editModal" class="modal-bg">
+  <div class="modal-box">
+    <h3>编辑站点: <span id="editSlugLabel"></span></h3>
+    <textarea id="editHtmlArea" rows="14" style="width:100%;box-sizing:border-box;font-family:monospace"></textarea>
+    <div class="modal-btn-row">
+      <button onclick="closeEdit()">取消</button>
+      <button class="btn-edit" onclick="saveEdit()">保存修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- 确认弹窗 -->
+<div id="confirmModal" class="modal-bg">
+  <div class="modal-box" style="max-width:450px;text-align:center">
+    <h3>确认删除</h3>
+    <p id="confirmMsg"></p>
+    <div class="modal-btn-row" style="justify-content:center">
+      <button onclick="closeConfirm()">取消</button>
+      <button id="confirmYesBtn" class="btn-danger">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let password = '';
+let currentPage = 1;
+let pageSize = 50;
+let totalPages = 1;
+let totalItems = 0;
+let currentData = [];
+let ipStats = [];
+let currentTab = 'sites';
+let confirmCallback = null;
+let searchKeyword = '';
+let isLoading = false;
+let allSitesCache = []; // 用于导出和删除全部
+
+// ========== 登录 ==========
+async function login() {
+  password = document.getElementById('adminPass').value.trim();
+  if (!password) return toast('请输入密码', 'error');
+  const ok = await loadPage(1);
+  if (ok) {
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('panel').style.display = 'block';
+    loadStats();
+  }
+}
+
+// ========== 加载统计 ==========
+async function loadStats() {
+  try {
+    const res = await fetch('/api/admin-sites?mode=stats', {
+      headers: { Authorization: 'Basic ' + btoa('admin:' + password) }
+    });
+    if (!res.ok) return;
+    const statsData = await res.json() || {};
+    ipStats = statsData.ipStats || [];
+    updateStats(statsData);
+    renderIPTable();
+    setTimeout(() => {
+      document.getElementById('statsCards').style.display = 'grid';
+    }, 100);
+  } catch (e) {
+    console.warn('统计加载失败:', e);
+  }
+}
+
+// ========== 加载分页数据 ==========
+async function loadPage(page = 1) {
+  if (isLoading) return;
+  isLoading = true;
+
+  const params = new URLSearchParams();
+  params.set('page', page);
+  params.set('limit', pageSize);
+  if (searchKeyword.trim()) params.set('search', searchKeyword.trim());
+
+  try {
+    const res = await fetch(`/api/admin-sites?${params.toString()}`, {
+      headers: { Authorization: 'Basic ' + btoa('admin:' + password) }
+    });
+
+    if (res.status === 401) {
+      toast('密码错误喵~', 'error');
+      isLoading = false;
+      return false;
+    }
+    if (!res.ok) {
+      toast('加载失败: ' + res.status, 'error');
+      isLoading = false;
+      return false;
+    }
+
+    const result = await res.json();
+    currentData = result.data || [];
+    totalItems = result.total || 0;
+    totalPages = result.totalPages || 1;
+    currentPage = page;
+
+    // 更新缓存（用于导出和删除全部）
+    if (page === 1 && !searchKeyword) {
+      // 简单处理：只缓存第一页用于导出，导出时会重新请求全部
+    }
+
+    renderTable(currentData);
+    renderPagination();
+    isLoading = false;
+    return true;
+  } catch (e) {
+    toast('网络错误: ' + e.message, 'error');
+    isLoading = false;
+    return false;
+  }
+}
+
+// ========== 统计卡片 ==========
+function updateStats(stats) {
+  const container = document.getElementById('statsCards');
+  const totalSites = stats.totalSites || 0;
+  const uniqueIPs = (stats.ipStats || []).length;
+
+  container.innerHTML = `
+    <div class="stat-card"><div class="stat-num">${totalSites}</div><div class="stat-label">总站点数</div></div>
+    <div class="stat-card"><div class="stat-num">${uniqueIPs}</div><div class="stat-label">独立 IP 数</div></div>
+  `;
+}
+
+// ========== 渲染站点表格 ==========
+function renderTable(sites) {
+  const tbody = document.getElementById('sitesTbody');
+  const noResults = document.getElementById('noResults');
+
+  if (!sites || sites.length === 0) {
+    tbody.innerHTML = '';
+    noResults.style.display = 'block';
+    return;
+  }
+  noResults.style.display = 'none';
+
+  const frag = document.createDocumentFragment();
+  for (const s of sites) {
+    const row = document.createElement('tr');
+    const slug = escapeHTML(s.slug || '');
+    const ip = escapeHTML(s.creator_ip || 'unknown');
+    const ct = escapeHTML(s.content_type || '-');
+    const createdAt = s.created_at ? new Date(s.created_at).toLocaleString('zh-CN') : '-';
+    const updatedAt = s.updated_at ? new Date(s.updated_at).toLocaleString('zh-CN') : '-';
+    const tokenShort = (s.admin_token || '').substring(0, 12);
+
+    row.innerHTML = `
+      <td><strong>${slug}</strong></td>
+      <td><span class="badge badge-ip">${ip}</span></td>
+      <td><span class="badge badge-ok">${ct}</span></td>
+      <td style="font-size:0.8rem">${createdAt}</td>
+      <td style="font-size:0.8rem">${updatedAt}</td>
+      <td><a class="link" href="/s/${slug}" target="_blank" rel="noopener">访问</a></td>
+      <td style="font-size:0.75rem;font-family:monospace">${tokenShort}... <button class="btn-sm" onclick="copyToken('${escapeAttr(s.admin_token || '')}')">复制</button></td>
+      <td>
+        <button class="btn-sm btn-edit" onclick="editSite('${slug}')">编辑</button>
+        <button class="btn-sm btn-del" onclick="deleteSite('${slug}')">删除</button>
+      </td>`;
+    frag.appendChild(row);
+  }
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+}
+
+// ========== 分页控件 ==========
+function renderPagination() {
+  const container = document.getElementById('pagination');
+  if (totalPages <= 1) {
+    container.innerHTML = `<span class="info">共 ${totalItems} 条</span>`;
+    return;
+  }
+
+  let html = `<span class="info">共 ${totalItems} 条，第 ${currentPage}/${totalPages} 页</span>`;
+  html += `<button class="btn-page" onclick="loadPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>‹</button>`;
+
+  // 显示最多 7 个页码
+  let start = Math.max(1, currentPage - 3);
+  let end = Math.min(totalPages, currentPage + 3);
+  if (end - start < 6) {
+    if (start === 1) end = Math.min(totalPages, start + 6);
+    else start = Math.max(1, end - 6);
+  }
+
+  if (start > 1) {
+    html += `<button class="btn-page" onclick="loadPage(1)">1</button>`;
+    if (start > 2) html += `<span style="color:#8b949e;padding:0 4px;">…</span>`;
+  }
+
+  for (let i = start; i <= end; i++) {
+    html += `<button class="btn-page ${i === currentPage ? 'active' : ''}" onclick="loadPage(${i})">${i}</button>`;
+  }
+
+  if (end < totalPages) {
+    if (end < totalPages - 1) html += `<span style="color:#8b949e;padding:0 4px;">…</span>`;
+    html += `<button class="btn-page" onclick="loadPage(${totalPages})">${totalPages}</button>`;
+  }
+
+  html += `<button class="btn-page" onclick="loadPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>›</button>`;
+
+  container.innerHTML = html;
+}
+
+// ========== IP 分组表格 ==========
+function renderIPTable() {
+  const tbody = document.getElementById('ipTbody');
+  const frag = document.createDocumentFragment();
+
+  for (const ip of ipStats) {
+    const row = document.createElement('tr');
+    const slugsPreview = (ip.slugs || []).slice(0, 5).map(s => escapeHTML(s)).join(', ');
+    const more = (ip.slugs || []).length > 5 ? ` +${ip.slugs.length - 5} 更多` : '';
+    const lastActive = ip.lastActive ? new Date(ip.lastActive).toLocaleString('zh-CN') : '-';
+
+    row.innerHTML = `
+      <td><span class="badge badge-ip">${escapeHTML(ip.ip)}</span></td>
+      <td><strong>${ip.siteCount}</strong></td>
+      <td style="font-size:0.8rem">${slugsPreview}${more}</td>
+      <td style="font-size:0.8rem">${lastActive}</td>`;
+    frag.appendChild(row);
+  }
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+}
+
+// ========== 搜索 ==========
+let searchTimer = null;
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    searchKeyword = document.getElementById('searchInput').value;
+    loadPage(1);
+  }, 400);
+}
+
+// ========== Tab 切换 ==========
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tabSites').style.display = tab === 'sites' ? 'block' : 'none';
+  document.getElementById('tabIP').style.display = tab === 'ip' ? 'block' : 'none';
+
+  const tabs = document.querySelectorAll('.tab');
+  if (tab === 'sites') tabs[0].classList.add('active');
+  else tabs[1].classList.add('active');
+}
+
+// ========== 编辑（单独获取内容） ==========
+async function editSite(slug) {
+  document.getElementById('editSlugLabel').innerText = slug;
+  document.getElementById('editHtmlArea').value = '加载中...';
+  document.getElementById('editModal').style.display = 'flex';
+  window._editSlug = slug;
+
+  try {
+    const res = await fetch(`/api/admin-sites?mode=content&slug=${encodeURIComponent(slug)}`, {
+      headers: { Authorization: 'Basic ' + btoa('admin:' + password) }
+    });
+    if (!res.ok) {
+      document.getElementById('editHtmlArea').value = '加载失败喵~';
+      return;
+    }
+    const data = await res.json();
+    document.getElementById('editHtmlArea').value = data.html_content || '';
+  } catch (e) {
+    document.getElementById('editHtmlArea').value = '加载失败: ' + e.message;
+  }
+}
+
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+  window._editSlug = null;
+}
+
+async function saveEdit() {
+  const slug = window._editSlug;
+  if (!slug) return;
+  const newHtml = document.getElementById('editHtmlArea').value;
+
+  // 需要找到该站点的 token（从当前页数据中查找）
+  const site = currentData.find(s => s.slug === slug);
+  if (!site) {
+    toast('找不到站点 token', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, html: newHtml, token: site.admin_token })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast('更新成功喵~');
+      closeEdit();
+      loadPage(currentPage);
+    } else {
+      toast('更新失败: ' + (data.error || res.status), 'error');
+    }
+  } catch (e) {
+    toast('网络错误: ' + e.message, 'error');
+  }
+}
+
+// ========== 删除单个 ==========
+function deleteSite(slug) {
+  showConfirm(`确定要删除站点 <strong>${escapeHTML(slug)}</strong> 吗？`, async () => {
+    try {
+      const res = await fetch('/api/admin-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + btoa('admin:' + password) },
+        body: JSON.stringify({ slug })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast(`已删除 ${slug} 喵~`);
+        loadPage(currentPage);
+        loadStats();
+      } else {
+        toast('删除失败: ' + (data.error || res.status), 'error');
+      }
+    } catch (e) {
+      toast('网络错误: ' + e.message, 'error');
+    }
+  });
+}
+
+// ========== 一键删除全部 ==========
+function deleteAllSites() {
+  showConfirm(
+    `<span style="color:#da3633">危险操作喵！</span><br><br>将删除 <strong>全部</strong> 站点，此操作不可撤销！<br>确定要继续吗？`,
+    async () => {
+      const btn = document.getElementById('deleteAllBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>删除中...';
+      try {
+        const res = await fetch('/api/admin-delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + btoa('admin:' + password) },
+          body: JSON.stringify({ deleteAll: true })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          toast(`已删除全部站点喵~ 共 ${data.deletedCount} 个`);
+          currentData = [];
+          ipStats = [];
+          totalItems = 0;
+          totalPages = 1;
+          renderTable([]);
+          renderIPTable();
+          renderPagination();
+          updateStats({ totalSites: 0, ipStats: [] });
+        } else {
+          toast('删除失败: ' + (data.error || res.status), 'error');
+        }
+      } catch (e) {
+        toast('网络错误: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '一键删除全部';
+      }
+    }
+  );
+}
+
+// ========== 导出 JSON（重新拉取全量） ==========
+async function exportJSON() {
+  toast('正在导出...', 'success');
+  try {
+    const res = await fetch('/api/admin-sites?mode=export', {
+      headers: { Authorization: 'Basic ' + btoa('admin:' + password) }
+    });
+    if (!res.ok) {
+      toast('导出失败', 'error');
+      return;
+    }
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `freeweb_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('导出完成喵~');
+  } catch (e) {
+    toast('导出失败: ' + e.message, 'error');
+  }
+}
+
+// ========== 复制 Token ==========
+function copyToken(token) {
+  navigator.clipboard.writeText(token).then(() => toast('Token 已复制喵~'));
+}
+
+// ========== 确认弹窗 ==========
+function showConfirm(msg, cb) {
+  document.getElementById('confirmMsg').innerHTML = msg;
+  document.getElementById('confirmModal').style.display = 'flex';
+  confirmCallback = cb;
+  document.getElementById('confirmYesBtn').onclick = () => {
+    closeConfirm();
+    if (confirmCallback) confirmCallback();
+    confirmCallback = null;
+  };
+}
+function closeConfirm() {
+  document.getElementById('confirmModal').style.display = 'none';
+  confirmCallback = null;
+}
+
+// ========== Toast ==========
+function toast(msg, type = 'success') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.innerText = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ========== 工具 ==========
+function escapeHTML(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function escapeAttr(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeEdit(); closeConfirm(); }
+});
+</script>
+</body>
+</html>

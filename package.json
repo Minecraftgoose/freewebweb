@@ -1,0 +1,13 @@
+{
+  "name": "freewebweb",
+  "version": "1.0.0",
+  "description": "Static site hosting with Supabase",
+  "main": "index.html",
+  "scripts": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "uuid": "^9.0.1"
+  },
+  "author": "",
+  "license": "MIT"
+}

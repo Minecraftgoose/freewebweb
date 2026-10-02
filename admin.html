@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage your Site - Freewebweb</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body{background:#0d1117;font-family:system-ui;padding:1rem;max-width:600px;margin:0 auto;color:#c9d1d9;}
+        .card{background:#161b22;border:1px solid #30363d;border-radius:16px;padding:1.5rem;margin-bottom:1rem;}
+        input,textarea,button{width:100%;margin:0.5rem 0;padding:0.6rem;border-radius:8px;border:1px solid #30363d;background:#0d1117;color:#c9d1d9;}
+        button{background:#238636;color:white;border:none;cursor:pointer;}
+        .danger{background:#da3633;}
+        .danger:hover{background:#f85149;}
+        .token{font-family:monospace;background:#0d1117;padding:0.2rem;border-radius:4px;}
+    </style>
+</head>
+<body>
+    <h1><i class="fas fa-user-edit"></i> Manage your Site</h1>
+    <div class="card">
+        <p><i class="fas fa-key"></i> Token: <span id="tokenDisplay" class="token"></span></p>
+        <input type="text" id="slug" placeholder="Subdomain (slug)">
+        <textarea id="htmlContent" rows="8" placeholder="New HTML code"></textarea>
+        <button id="updateBtn"><i class="fas fa-save"></i> Update Site</button>
+        <button id="deleteBtn" class="danger"><i class="fas fa-trash-alt"></i> Delete Site</button>
+        <div id="message"></div>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (!token) {
+            document.body.innerHTML = '<p><i class="fas fa-exclamation-triangle"></i> No token provided. Please use a valid management link.</p>';
+        } else {
+            document.getElementById('tokenDisplay').innerText = token;
+        }
+        document.getElementById('updateBtn').onclick = async () => {
+            const slug = document.getElementById('slug').value;
+            const html = document.getElementById('htmlContent').value;
+            if (!slug || !html) { alert('Please enter both subdomain and HTML content.'); return; }
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, html, token })
+            });
+            const data = await res.json();
+            const msgDiv = document.getElementById('message');
+            if (res.ok) {
+                const detectInfo = data.detection ? ` <small style="color:#8b949e">(${data.detection})</small>` : '';
+                msgDiv.innerHTML = `<p style="color:#3fb950"><i class="fas fa-check-circle"></i> ${data.message || '更新成功喵~'}${detectInfo}</p>`;
+            } else if (res.status === 422) {
+                msgDiv.innerHTML = `<p style="color:#f85149"><i class="fas fa-shield-alt"></i> 内容检测未通过喵~<br><small>${data.error}</small></p>`;
+            } else {
+                msgDiv.innerHTML = `<p style="color:#f85149"><i class="fas fa-times-circle"></i> 错误: ${data.error || JSON.stringify(data)}</p>`;
+            }
+        };
+        document.getElementById('deleteBtn').onclick = async () => {
+            if (!confirm('Permanently delete this site? This action cannot be undone.')) return;
+            const slug = document.getElementById('slug').value;
+            if (!slug) { alert('Please enter the subdomain.'); return; }
+            const res = await fetch('/api/delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, token })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                alert(data.message || '站点已删除喵~');
+                window.location.href = '/';
+            } else {
+                const data = await res.json();
+                alert('删除失败: ' + (data.error || res.status));
+            }
+        };
+    </script>
+</body>
+</html>

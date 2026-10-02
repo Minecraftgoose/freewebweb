@@ -1,0 +1,41 @@
+[build]
+  command = "echo 'No build command needed'"
+  functions = "functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# 根路径重定向到 index.html
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+  force = true
+
+# API 重定向到函数
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# 站点访问重定向
+[[redirects]]
+  from = "/s/*"
+  to = "/.netlify/functions/serve/:splat"
+  status = 200
+  force = true
+
+# 管理员页面保护（防止被意外重定向）
+[[redirects]]
+  from = "/admin*"
+  to = "/admin.html"
+  status = 200
+  force = false
+
+# 404 页面（可选）
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 404
+  force = false
